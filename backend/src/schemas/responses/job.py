@@ -11,6 +11,8 @@ class JobResponse(BaseModel):
     status: JobStatus
     project_id: str
     model_id: str | None
+    input_params: dict | None
+    output_params: dict | None
     progress_percent: float
     progress_message: str | None
     error_message: str | None

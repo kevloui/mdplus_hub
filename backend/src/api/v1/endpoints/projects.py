@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy import func, select
 
 from src.dependencies import CurrentUser, DbSession
+from src.infrastructure.database.models.glimps_model import GlimpsModel
 from src.infrastructure.database.models.project import Project
 from src.infrastructure.repositories.project_repository import ProjectRepository
 from src.schemas.requests.project import CreateProjectRequest, UpdateProjectRequest
@@ -132,3 +134,19 @@ async def delete_project(
         )
 
     await repository.delete(project)
+
+
+@router.get("/stats/trained-models")
+async def get_trained_models_count(
+    db: DbSession,
+    current_user: CurrentUser,
+) -> dict:
+    stmt = (
+        select(func.count(GlimpsModel.id))
+        .join(Project, GlimpsModel.project_id == Project.id)
+        .where(Project.owner_id == current_user.id)
+        .where(GlimpsModel.is_trained == True)
+    )
+    result = await db.execute(stmt)
+    count = result.scalar() or 0
+    return {"trained_models_count": count}

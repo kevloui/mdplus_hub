@@ -3,7 +3,7 @@ from uuid import uuid4
 
 import mdtraj as md
 import numpy as np
-from fastapi import APIRouter, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Form, HTTPException, Query, UploadFile, status
 
 from src.dependencies import CurrentUser, DbSession
 from src.infrastructure.database.models.molecule import FileFormat, Molecule, MoleculeType
@@ -86,13 +86,13 @@ async def list_molecules(
 
 @router.post("/", response_model=MoleculeResponse, status_code=status.HTTP_201_CREATED)
 async def upload_molecule(
-    project_id: str,
     file: UploadFile,
     db: DbSession,
     current_user: CurrentUser,
-    name: str | None = None,
-    description: str | None = None,
-    molecule_type: str = "atomistic",
+    project_id: str = Form(...),
+    name: str | None = Form(None),
+    description: str | None = Form(None),
+    molecule_type: str = Form("atomistic"),
 ) -> MoleculeResponse:
     project_repo = ProjectRepository(db)
 

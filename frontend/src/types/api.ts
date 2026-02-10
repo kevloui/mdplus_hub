@@ -57,6 +57,8 @@ export interface Job {
   status: "pending" | "queued" | "running" | "completed" | "failed" | "cancelled";
   project_id: string;
   model_id: string | null;
+  input_params: Record<string, unknown> | null;
+  output_params: Record<string, unknown> | null;
   progress_percent: number;
   progress_message: string | null;
   error_message: string | null;

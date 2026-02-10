@@ -38,6 +38,18 @@ class GlimpsAdapter:
 
         return cls(Glimps())
 
+    @classmethod
+    def create_with_options(
+        cls,
+        pca: bool = False,
+        refine: bool = True,
+        shave: bool = True,
+        triangulate: bool = False,
+    ) -> "GlimpsAdapter":
+        from mdplus.multiscale import Glimps
+
+        return cls(Glimps(pca=pca, refine=refine, shave=shave, triangulate=triangulate))
+
     def fit(
         self,
         cg_coords: NDArray[np.float64],

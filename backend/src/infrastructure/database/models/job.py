@@ -38,8 +38,13 @@ class Job(Base):
         primary_key=True,
         default=lambda: str(uuid4()),
     )
-    job_type: Mapped[JobType] = mapped_column(Enum(JobType))
-    status: Mapped[JobStatus] = mapped_column(Enum(JobStatus), default=JobStatus.PENDING)
+    job_type: Mapped[JobType] = mapped_column(
+        Enum(JobType, values_callable=lambda x: [e.value for e in x])
+    )
+    status: Mapped[JobStatus] = mapped_column(
+        Enum(JobStatus, values_callable=lambda x: [e.value for e in x]),
+        default=JobStatus.PENDING,
+    )
     user_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("users.id"),

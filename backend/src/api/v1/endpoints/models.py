@@ -10,7 +10,7 @@ from src.infrastructure.database.models.job import Job, JobStatus, JobType
 from src.infrastructure.database.models.molecule import Molecule
 from src.infrastructure.repositories.project_repository import ProjectRepository
 from src.infrastructure.storage.file_storage import get_file_storage
-from src.schemas.requests.model import CreateModelRequest
+from src.schemas.requests.model import CreateModelRequest, GlimpsOptionsRequest
 from src.schemas.responses.model import ModelListResponse, ModelResponse, TrainingJobResponse
 from src.workers.settings import WorkerSettings
 
@@ -106,6 +106,10 @@ async def train_model(
     current_user: CurrentUser,
     cg_molecule_id: str = Form(...),
     atomistic_molecule_id: str = Form(...),
+    pca: bool = Form(False),
+    refine: bool = Form(True),
+    shave: bool = Form(True),
+    triangulate: bool = Form(False),
 ) -> TrainingJobResponse:
     stmt = select(GlimpsModel).where(GlimpsModel.id == model_id)
     result = await db.execute(stmt)
@@ -162,8 +166,16 @@ async def train_model(
             detail="Atomistic molecule has no coordinates",
         )
 
+    glimps_options = {
+        "pca": pca,
+        "refine": refine,
+        "shave": shave,
+        "triangulate": triangulate,
+    }
+
     model.cg_molecule_id = cg_molecule_id
     model.atomistic_molecule_id = atomistic_molecule_id
+    model.training_config = glimps_options
     await db.flush()
 
     job = Job(
@@ -175,6 +187,7 @@ async def train_model(
         input_params={
             "cg_molecule_id": cg_molecule_id,
             "atomistic_molecule_id": atomistic_molecule_id,
+            "glimps_options": glimps_options,
         },
     )
     db.add(job)
@@ -188,6 +201,7 @@ async def train_model(
         cg_molecule.coordinates_path,
         atomistic_molecule.coordinates_path,
         model_id,
+        glimps_options,
     )
     await redis_pool.close()
 
@@ -268,6 +282,14 @@ async def run_inference(
     await db.flush()
     await db.refresh(job)
 
+    atomistic_molecule_stmt = select(Molecule).where(
+        Molecule.id == model.atomistic_molecule_id
+    )
+    atomistic_result = await db.execute(atomistic_molecule_stmt)
+    atomistic_molecule = atomistic_result.scalar_one_or_none()
+
+    atomistic_file_path = atomistic_molecule.file_path if atomistic_molecule else None
+
     redis_pool = await create_pool(WorkerSettings.redis_settings)
     await redis_pool.enqueue_job(
         "run_inference",
@@ -275,6 +297,9 @@ async def run_inference(
         model.model_path,
         input_molecule.coordinates_path,
         output_file_path,
+        input_molecule_id,
+        model.project_id,
+        atomistic_file_path,
     )
     await redis_pool.close()
 

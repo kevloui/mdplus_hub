@@ -44,10 +44,12 @@ class Molecule(Base):
         index=True,
     )
     molecule_type: Mapped[MoleculeType] = mapped_column(
-        Enum(MoleculeType),
+        Enum(MoleculeType, values_callable=lambda x: [e.value for e in x]),
         default=MoleculeType.ATOMISTIC,
     )
-    file_format: Mapped[FileFormat] = mapped_column(Enum(FileFormat))
+    file_format: Mapped[FileFormat] = mapped_column(
+        Enum(FileFormat, values_callable=lambda x: [e.value for e in x])
+    )
     file_path: Mapped[str] = mapped_column(String(500))
     coordinates_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     n_atoms: Mapped[int] = mapped_column(Integer)

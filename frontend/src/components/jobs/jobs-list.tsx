@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, XCircle, Clock, CheckCircle, Play, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { Loader2, XCircle, Clock, CheckCircle, Play, AlertCircle, Download, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { getJobs, cancelJob } from "@/lib/api";
+import { getJobs, cancelJob, downloadJobResult } from "@/lib/api";
 import type { Job } from "@/types/api";
 
 interface JobsListProps {
   projectId?: string;
   refreshTrigger?: number;
+  onMoleculeCreated?: () => void;
 }
 
 const statusConfig: Record<
@@ -31,11 +33,12 @@ const jobTypeLabels: Record<Job["job_type"], string> = {
   file_processing: "File Processing",
 };
 
-export function JobsList({ projectId, refreshTrigger }: JobsListProps) {
+export function JobsList({ projectId, refreshTrigger, onMoleculeCreated }: JobsListProps) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadJobs();
@@ -70,6 +73,17 @@ export function JobsList({ projectId, refreshTrigger }: JobsListProps) {
     }
   };
 
+  const handleDownload = async (jobId: string) => {
+    setDownloadingId(jobId);
+    try {
+      await downloadJobResult(jobId);
+    } catch (err) {
+      alert("Failed to download result");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-32 items-center justify-center">
@@ -100,6 +114,7 @@ export function JobsList({ projectId, refreshTrigger }: JobsListProps) {
         const config = statusConfig[job.status];
         const StatusIcon = config.icon;
         const canCancel = ["pending", "queued", "running"].includes(job.status);
+        const canDownload = job.status === "completed" && job.job_type === "inference" && job.output_params;
 
         return (
           <div key={job.id} className="p-4">
@@ -135,6 +150,23 @@ export function JobsList({ projectId, refreshTrigger }: JobsListProps) {
                     )}
                   </Button>
                 )}
+                {canDownload && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDownload(job.id)}
+                    disabled={downloadingId === job.id}
+                  >
+                    {downloadingId === job.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Download className="mr-1 h-4 w-4" />
+                        Download
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
             {job.status === "running" && (
@@ -151,6 +183,28 @@ export function JobsList({ projectId, refreshTrigger }: JobsListProps) {
               <p className="mt-2 text-sm text-destructive">
                 {job.error_message}
               </p>
+            )}
+            {job.status === "completed" && (
+              <div className="mt-2 text-sm text-muted-foreground">
+                {job.job_type === "inference" && job.output_params && (
+                  <div className="flex items-center gap-3">
+                    <p>
+                      Result: {(job.output_params as { n_frames?: number; n_atoms?: number }).n_frames} frame(s), {(job.output_params as { n_frames?: number; n_atoms?: number }).n_atoms} atoms
+                    </p>
+                    {(job.output_params as { molecule_id?: string }).molecule_id && (
+                      <Link href={`/projects/${job.project_id}/molecules/${(job.output_params as { molecule_id?: string }).molecule_id}`}>
+                        <Button variant="outline" size="sm">
+                          <Eye className="mr-1 h-4 w-4" />
+                          View Molecule
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+                )}
+                {job.job_type === "training" && (
+                  <p>Training completed successfully</p>
+                )}
+              </div>
             )}
           </div>
         );

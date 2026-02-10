@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getMolecules, trainModel } from "@/lib/api";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { getMolecules, trainModel, DEFAULT_GLIMPS_OPTIONS } from "@/lib/api";
+import type { GlimpsOptions } from "@/lib/api/models";
 import type { GlimpsModel, Molecule } from "@/types/api";
 
 interface TrainModelDialogProps {
@@ -41,6 +49,7 @@ export function TrainModelDialog({
   const [molecules, setMolecules] = useState<Molecule[]>([]);
   const [cgMoleculeId, setCgMoleculeId] = useState("");
   const [atomisticMoleculeId, setAtomisticMoleculeId] = useState("");
+  const [glimpsOptions, setGlimpsOptions] = useState<GlimpsOptions>(DEFAULT_GLIMPS_OPTIONS);
   const [error, setError] = useState("");
   const [loadingMolecules, setLoadingMolecules] = useState(false);
 
@@ -85,10 +94,11 @@ export function TrainModelDialog({
     setError("");
 
     try {
-      await trainModel(model.id, cgMoleculeId, atomisticMoleculeId);
+      await trainModel(model.id, cgMoleculeId, atomisticMoleculeId, glimpsOptions);
       onOpenChange(false);
       setCgMoleculeId("");
       setAtomisticMoleculeId("");
+      setGlimpsOptions(DEFAULT_GLIMPS_OPTIONS);
       onTrainStarted();
     } catch (err) {
       setError("Failed to start training. Please try again.");
@@ -165,6 +175,107 @@ export function TrainModelDialog({
                       </SelectContent>
                     </Select>
                   )}
+                </div>
+
+                <div className="border-t pt-4 mt-2">
+                  <Label className="text-base font-semibold">GLIMPS Options</Label>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Configure the GLIMPS resolution transformation pipeline
+                  </p>
+                  <TooltipProvider>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="pca"
+                          checked={glimpsOptions.pca}
+                          onCheckedChange={(checked) =>
+                            setGlimpsOptions((prev) => ({ ...prev, pca: !!checked }))
+                          }
+                          disabled={loading || glimpsOptions.triangulate}
+                        />
+                        <Label htmlFor="pca" className="flex items-center gap-1 cursor-pointer">
+                          PCA
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">Use PCA transform step for dimensionality reduction before regression</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="refine"
+                          checked={glimpsOptions.refine}
+                          onCheckedChange={(checked) =>
+                            setGlimpsOptions((prev) => ({ ...prev, refine: !!checked }))
+                          }
+                          disabled={loading}
+                        />
+                        <Label htmlFor="refine" className="flex items-center gap-1 cursor-pointer">
+                          Refine
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">Use elastic network minimizer (ENM) to improve output geometry</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="shave"
+                          checked={glimpsOptions.shave}
+                          onCheckedChange={(checked) =>
+                            setGlimpsOptions((prev) => ({ ...prev, shave: !!checked }))
+                          }
+                          disabled={loading || glimpsOptions.triangulate}
+                        />
+                        <Label htmlFor="shave" className="flex items-center gap-1 cursor-pointer">
+                          Shave
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">Calculate terminal atom positions using Z-matrix (shave/sprout algorithm)</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="triangulate"
+                          checked={glimpsOptions.triangulate}
+                          onCheckedChange={(checked) => {
+                            const newTriangulate = !!checked;
+                            setGlimpsOptions((prev) => ({
+                              ...prev,
+                              triangulate: newTriangulate,
+                              shave: newTriangulate ? false : prev.shave,
+                              pca: newTriangulate ? false : prev.pca,
+                            }));
+                          }}
+                          disabled={loading}
+                        />
+                        <Label htmlFor="triangulate" className="flex items-center gap-1 cursor-pointer">
+                          Triangulate
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">Replace core MLR step with triangulation method (disables PCA and Shave)</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </Label>
+                      </div>
+                    </div>
+                  </TooltipProvider>
                 </div>
               </>
             )}

@@ -204,6 +204,7 @@ export default function ProjectPage({ params }: ProjectPageProps) {
               <JobsList
                 projectId={project.id}
                 refreshTrigger={jobsRefresh}
+                onMoleculeCreated={() => setMoleculesRefresh((n) => n + 1)}
               />
             </CardContent>
           </Card>

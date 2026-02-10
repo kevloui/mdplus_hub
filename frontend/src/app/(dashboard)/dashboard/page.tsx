@@ -11,12 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getProjects, getJobs } from "@/lib/api";
+import { getProjects, getJobs, getTrainedModelsCount } from "@/lib/api";
 import type { Project, Job } from "@/types/api";
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [trainedModelsCount, setTrainedModelsCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,12 +26,14 @@ export default function DashboardPage() {
 
   const loadData = async () => {
     try {
-      const [projectsData, jobsData] = await Promise.all([
+      const [projectsData, jobsData, modelsData] = await Promise.all([
         getProjects(),
         getJobs({ limit: 5 }),
+        getTrainedModelsCount(),
       ]);
       setProjects(projectsData.projects);
       setJobs(jobsData.jobs);
+      setTrainedModelsCount(modelsData.trained_models_count);
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
     } finally {
@@ -71,7 +74,7 @@ export default function DashboardPage() {
         />
         <StatCard
           title="Models"
-          value="-"
+          value={trainedModelsCount.toString()}
           description="Trained GLIMPS models"
           icon={Brain}
         />

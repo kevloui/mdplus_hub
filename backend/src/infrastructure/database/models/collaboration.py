@@ -42,7 +42,7 @@ class ProjectCollaborator(Base):
         index=True,
     )
     role: Mapped[CollaboratorRole] = mapped_column(
-        Enum(CollaboratorRole),
+        Enum(CollaboratorRole, values_callable=lambda x: [e.value for e in x]),
         default=CollaboratorRole.VIEWER,
     )
     invited_by_id: Mapped[str] = mapped_column(

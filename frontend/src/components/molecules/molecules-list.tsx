@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText, Loader2, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { FileText, Loader2, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getMolecules, deleteMolecule } from "@/lib/api";
@@ -12,6 +13,7 @@ interface MoleculesListProps {
   onSelect?: (molecule: Molecule) => void;
   selectedId?: string;
   refreshTrigger?: number;
+  showViewButton?: boolean;
 }
 
 const typeLabels: Record<string, string> = {
@@ -31,6 +33,7 @@ export function MoleculesList({
   onSelect,
   selectedId,
   refreshTrigger,
+  showViewButton = true,
 }: MoleculesListProps) {
   const [molecules, setMolecules] = useState<Molecule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,6 +120,14 @@ export function MoleculesList({
             <Badge variant={typeVariants[molecule.molecule_type]}>
               {typeLabels[molecule.molecule_type]}
             </Badge>
+            {showViewButton && (
+              <Link href={`/projects/${projectId}/molecules/${molecule.id}`}>
+                <Button variant="outline" size="sm">
+                  <Eye className="mr-1 h-4 w-4" />
+                  View
+                </Button>
+              </Link>
+            )}
             <Button
               variant="ghost"
               size="icon"

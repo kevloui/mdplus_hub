@@ -17,6 +17,7 @@ async def train_glimps_model(
     cg_file_path: str,
     atomistic_file_path: str,
     model_id: str,
+    glimps_options: dict[str, bool] | None = None,
 ) -> dict[str, Any]:
     from sqlalchemy import select, update
 
@@ -49,7 +50,13 @@ async def train_glimps_model(
 
         start_time = time.time()
 
-        adapter = GlimpsAdapter.create_default()
+        options = glimps_options or {}
+        adapter = GlimpsAdapter.create_with_options(
+            pca=options.get("pca", False),
+            refine=options.get("refine", True),
+            shave=options.get("shave", True),
+            triangulate=options.get("triangulate", False),
+        )
 
         def progress_callback(percent: float, message: str) -> None:
             pass
