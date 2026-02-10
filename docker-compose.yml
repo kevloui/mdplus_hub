@@ -1,0 +1,103 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend/Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/src:/app/src
+      - ./storage:/app/storage
+    environment:
+      - DEBUG=true
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/mdplus_hub
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - STORAGE_BACKEND=local
+      - STORAGE_PATH=/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - mdplus-network
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend/Dockerfile.worker
+    volumes:
+      - ./backend/src:/app/src
+      - ./storage:/app/storage
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/mdplus_hub
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - STORAGE_BACKEND=local
+      - STORAGE_PATH=/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: arq src.workers.settings.WorkerSettings
+    networks:
+      - mdplus-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend/Dockerfile
+      target: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/next.config.mjs:/app/next.config.mjs
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_SECRET=dev-nextauth-secret-change-in-production
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    networks:
+      - mdplus-network
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=mdplus_hub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mdplus-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mdplus-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  mdplus-network:
+    driver: bridge
