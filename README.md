@@ -2,6 +2,8 @@
 
 A containerized web application for molecular dynamics backmapping using the GLIMPS machine learning approach from the mdplus package.
 
+![Molecule Viewer](docs/images/molecule-viewer.png)
+
 ## Features
 
 - **GLIMPS Backmapping**: Transform coarse-grained molecular structures to atomistic resolution
