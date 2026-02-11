@@ -241,6 +241,10 @@ Use the 3D viewer to compare:
 - **Export**: Download backmapped structures for further MD simulations
 - **Job history**: All jobs are saved and can be reviewed in the Jobs page
 
+## References
+
+- Louison, K., et al. (2021). "GLIMPS: A Machine Learning Approach to Resolution Transformation for Multiscale Modeling." *Journal of Chemical Theory and Computation*. https://doi.org/10.1021/acs.jctc.1c00735
+
 ## License
 
 MIT
