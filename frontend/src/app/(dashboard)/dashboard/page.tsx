@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { FolderKanban, Layers, Brain, Loader2 } from "lucide-react";
-import { CreateProjectDialog } from "@/components/projects/create-project-dialog";
 import {
   Card,
   CardContent,
@@ -13,6 +13,11 @@ import {
 } from "@/components/ui/card";
 import { getProjects, getJobs, getTrainedModelsCount } from "@/lib/api";
 import type { Project, Job } from "@/types/api";
+
+const CreateProjectDialog = dynamic(
+  () => import("@/components/projects/create-project-dialog").then((mod) => mod.CreateProjectDialog),
+  { ssr: false }
+);
 
 export default function DashboardPage() {
   const [projects, setProjects] = useState<Project[]>([]);

@@ -6,11 +6,11 @@ import { LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
-  user: {
+  user?: {
     name?: string | null;
     email?: string | null;
     image?: string | null;
-  };
+  } | null;
 }
 
 export function Header({ user }: HeaderProps) {
@@ -22,7 +22,7 @@ export function Header({ user }: HeaderProps) {
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
             <User className="h-4 w-4" />
           </div>
-          <span className="text-sm font-medium">{user.name || user.email}</span>
+          <span className="text-sm font-medium">{user?.name || user?.email || "Loading..."}</span>
         </div>
         <Button
           variant="ghost"

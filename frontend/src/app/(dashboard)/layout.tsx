@@ -1,26 +1,22 @@
-import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth";
+"use client";
 
-import { authOptions } from "@/lib/auth/auth-options";
+import { useSession } from "next-auth/react";
+
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect("/login");
-  }
+  const { data: session } = useSession();
 
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header user={session.user} />
+        <Header user={session?.user} />
         <main className="flex-1 overflow-y-auto bg-muted/30 p-6">
           {children}
         </main>

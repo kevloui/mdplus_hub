@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Loader2, Settings, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,15 +16,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { UploadMoleculeDialog } from "@/components/molecules/upload-molecule-dialog";
 import { MoleculesList } from "@/components/molecules/molecules-list";
-import { CreateModelDialog } from "@/components/models/create-model-dialog";
 import { ModelsList } from "@/components/models/models-list";
-import { TrainModelDialog } from "@/components/models/train-model-dialog";
-import { InferenceDialog } from "@/components/models/inference-dialog";
 import { JobsList } from "@/components/jobs/jobs-list";
 import { getProject, updateProject, deleteProject } from "@/lib/api";
 import type { ProjectDetail, GlimpsModel } from "@/types/api";
+
+const UploadMoleculeDialog = dynamic(
+  () => import("@/components/molecules/upload-molecule-dialog").then((mod) => mod.UploadMoleculeDialog),
+  { ssr: false }
+);
+
+const CreateModelDialog = dynamic(
+  () => import("@/components/models/create-model-dialog").then((mod) => mod.CreateModelDialog),
+  { ssr: false }
+);
+
+const TrainModelDialog = dynamic(
+  () => import("@/components/models/train-model-dialog").then((mod) => mod.TrainModelDialog),
+  { ssr: false }
+);
+
+const InferenceDialog = dynamic(
+  () => import("@/components/models/inference-dialog").then((mod) => mod.InferenceDialog),
+  { ssr: false }
+);
 
 interface ProjectPageProps {
   params: { projectId: string };

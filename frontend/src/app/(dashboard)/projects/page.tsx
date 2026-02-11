@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateProjectDialog } from "@/components/projects/create-project-dialog";
+import dynamic from "next/dynamic";
 import { ProjectsList } from "@/components/projects/projects-list";
 import {
   Card,
@@ -9,6 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
+const CreateProjectDialog = dynamic(
+  () => import("@/components/projects/create-project-dialog").then((mod) => mod.CreateProjectDialog),
+  { ssr: false }
+);
 
 export default function ProjectsPage() {
   return (
